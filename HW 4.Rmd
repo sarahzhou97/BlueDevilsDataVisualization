@@ -1,0 +1,83 @@
+---
+title: "HW4"
+author: "Sarah Zhou"
+date: "11/22/2015"
+output: html_document
+---
+Loading packages:
+```{r}
+library(rvest)
+library(lubridate)
+library(stringr)
+library(dplyr)
+```
+
+Function for harvesting the data:
+```{r}
+seasons <- function(seasonNumbers = NULL, HTML = NULL) {
+  
+page <- read_html(HTML) 
+  
+date <- page %>%
+  html_nodes(".date_nowrap") %>%
+  html_text() %>%
+  str_trim() %>%
+  str_replace(" //","")
+
+season <- rep(seasonNumbers,length(date))
+
+opponent <- page %>%
+  html_nodes(".opponent") %>%
+  html_text() %>%
+  str_trim() %>%
+  tail(-1) %>%
+  str_replace("\\(","") %>%
+  str_replace("\\)","") %>%
+  str_replace(" *","")
+
+location <- page %>%
+  html_nodes(".location") %>%
+  html_text() %>%
+  str_trim() %>%
+  tail(-1) %>%
+  str_replace("at ","")
+
+dukerank <- page %>%
+  html_nodes(".team-rank") %>%
+  html_text() %>%
+  str_trim() %>%
+  tail(-1)
+
+opprank <- page %>%
+  html_nodes(".opponent-rank") %>%
+  html_text() %>%
+  str_trim() %>%
+  tail(-1)
+
+ blue_devils_data <- data.frame(season, date, opponent, location, dukerank, opprank)
+}
+```
+
+```{r}
+blue_devils_1415 <- seasons("14-15", "http://www.goduke.com/SportSelect.dbml?SPSID=22726&SPID=1845&DB_OEM_ID=4200&Q_SEASON=2014")
+blue_devils_1415
+
+blue_devils_1314 <- seasons("13-14", "http://www.goduke.com/SportSelect.dbml?SPSID=22726&SPID=1845&DB_OEM_ID=4200&Q_SEASON=2013")
+blue_devils_1314
+
+blue_devils_1213 <- seasons("12-13", "http://www.goduke.com/SportSelect.dbml?SPSID=22726&SPID=1845&DB_OEM_ID=4200&Q_SEASON=2012")
+blue_devils_1213
+
+blue_devils_1112 <- seasons("11-12", "http://www.goduke.com/SportSelect.dbml?SPSID=22726&SPID=1845&DB_OEM_ID=4200&Q_SEASON=2011")
+blue_devils_1112
+
+blue_devils_1011 <- seasons("10-11", "http://www.goduke.com/SportSelect.dbml?SPSID=22726&SPID=1845&DB_OEM_ID=4200&Q_SEASON=2010")
+blue_devils_1011
+```
+
+Stacking data sets together and writing it as .csv file
+```{r}
+basketball <- rbind(blue_devils_1415,blue_devils_1314,blue_devils_1213,blue_devils_1112,blue_devils_1011)
+
+write.csv(basketball,file="bluedevilsbasketball.csv")
+```
