@@ -242,50 +242,47 @@ For the numerical one, the user can choose an explanatory numerical variable fro
 
 ```{r}
 shinyUI(fluidPage(
-titlePanel("Categorical and Numerical Analysis on Duke Basketball Data"),
-sidebarLayout(
+  titlePanel("Categorical and Numerical Analysis on Duke Basketball Data"),
+  sidebarLayout(
     sidebarPanel(
-
+      
       selectInput("expvar", 
-            "Explanatory Variable (Categorical):",
-            choices = c("result", "season", "result","location", "month")),
+                  "Explanatory Variable (Categorical):",
+                  choices = c("result", "season", "location", "month"), selected = "result"),
       
       selectInput("color", 
                   "Responding Variable (Categorical):",
-                  choices = c("result","season", "result","location","month"))
-      ,
-
+                  choices = c("result","season", "location","month"), selected = "season"),
+      
       hr(),
       
       selectInput("numvar1",
                   "Explanatory Variable (Numerical):",
-                  choices = c("dukerank","opprank")),
+                  choices = c("dukerank","opprank"), selected = "dukerank"),
       
       selectInput("numvar2",
                   "Responding Variable (Numerical):",
-                  choices = c("dukerank","opprank")),
+                  choices = c("dukerank","opprank"), selected = "opprank"),
       
       selectInput("color2", 
                   "Categorical Variable:",
-                  choices = c("result","season", "result","location","month"))
+                  choices = c("result","season", "location","month"), selected = "result")
+      
+    ),
     
-),
-
     mainPanel(
-
-      plotOutput('categoricalPlot')
       
+      plotOutput('categoricalPlot'),
       
-      ,
       hr(),
       
       plotOutput("numericalPlot")
     )
-)
+  )
 ))
 
 output$categoricalPlot <- renderPlot({
-
+  
   basketball <- basketball %>%
     filter_(!is.na(input$expvar)) %>%
     filter_(!is.na(input$color))
@@ -293,21 +290,18 @@ output$categoricalPlot <- renderPlot({
   ggplot(data = basketball, aes_string(x = input$expvar, fill = input$color)) +
     geom_bar() +
     ggtitle(paste0("Categorical Plot: ", input$expvar," vs. ",input$color))
-    
+  
 })
-    
-output$numericalPlot <- renderPlot({
 
+output$numericalPlot <- renderPlot({
+  
   basketball <- basketball %>%
     filter(!is.na(input$numvar1)) %>%
     filter(!is.na(input$numvar2))
   
-    ggplot(data = basketball, aes_string(x = input$numvar1, y = input$numvar2, color = input$color2)) +
-      geom_point() +
-      ggtitle(paste0("Numerical Plot: ", input$numvar1," vs. ",input$numvar2))
-
-
-  })
-
+  ggplot(data = basketball, aes_string(x = input$numvar1, y = input$numvar2, color = input$color2)) +
+    geom_point() +
+    ggtitle(paste0("Numerical Plot: ", input$numvar1," vs. ",input$numvar2))
+})
 ```
 
