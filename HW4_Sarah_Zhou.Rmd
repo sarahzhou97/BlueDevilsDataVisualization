@@ -128,7 +128,7 @@ blue_devils_1415
 
 **Function for harvesting the data and cleaning up data:**
 
-Each function contains a parameter for the HTML link to the page and the season years, which are used to fill the season column.
+Each function contains a parameter for the HTML link to the page and the seasonNumbers ("13-14", "12-13", etc), which is used to fill the season column.
 
 ```{r}
 #Harvesting data
