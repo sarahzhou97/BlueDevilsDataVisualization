@@ -1,0 +1,307 @@
+---
+title: "HW4_Sarah_Zhou"
+author: "Sarah Zhou"
+month: "11/29/2015"
+output: html_document
+runtime: shiny
+---
+
+###Loading packages:
+```{r}
+library(rvest)
+library(lubridate)
+library(stringr)
+library(dplyr)
+library(ggplot2)
+```
+
+###Part 1: Harvesting the data
+
+**Harvesting Season 2014-2015 data**
+
+Reading the web page
+
+```{r}
+page <- read_html("http://www.goduke.com/SportSelect.dbml?SPSID=22726&SPID=1845&DB_OEM_ID=4200&Q_SEASON=2014") 
+```
+
+Harvesting the data using the SelectorGadget tool, a javascript bookmarklet that allows us to figure out what css selector each variable is on the page, which we can then pass into the html_nodes function.
+
+I used str-trim to trim the unwanted characters.
+
+I also used tail(-1) to delete the first entry for some of the variables that included the header. The extra header would've made the number of rows unequal.
+
+For the season column, I inserted the string "14-15" into the rep function to repeat it "length(month)" number of times so it would have the same number of rows as the rest of the variables.
+
+```{r}
+month <- page %>%
+  html_nodes(".date_nowrap") %>%
+  html_text() %>%
+  str_trim() 
+  
+season <- rep("14-15",length(month))
+
+opponent <- page %>%
+  html_nodes(".opponent") %>%
+  html_text() %>%
+  str_trim() %>%
+  tail(-1) 
+
+location <- page %>%
+  html_nodes(".location") %>%
+  html_text() %>%
+  str_trim() %>%
+  tail(-1) 
+
+dukerank <- page %>%
+  html_nodes(".team-rank") %>%
+  html_text() %>%
+  str_trim() %>%
+  tail(-1)
+
+opprank <- page %>%
+  html_nodes(".opponent-rank") %>%
+  html_text() %>%
+  str_trim() %>%
+  tail(-1)
+
+result <- page %>%
+  html_nodes(".results") %>%
+  html_text() %>%
+  str_trim() %>%
+  tail(-1)
+```
+
+Storing all the variables into a data frame
+
+```{r}
+blue_devils_1415 <- data.frame(season, month, opponent, location, result, dukerank, opprank)
+```
+
+**Cleaning up the data**
+
+Convert both dukerank and opprank variable into the character type and then to numeric type so they are numeric values
+
+```{r}
+blue_devils_1415$dukerank = as.numeric(as.character(blue_devils_1415$dukerank))
+blue_devils_1415$opprank = as.numeric(as.character(blue_devils_1415$opprank))
+```
+
+Convert the result variable to the character type so that I can alter it using a function in the stringr package
+
+```{r}
+blue_devils_1415$result = as.character(blue_devils_1415$result)
+```
+
+Used the grepl function to clean up the result variable. The result variables contain a letter indicating Win (W) or Loss (L) plus a comma and the score of both teams (eg. "W, 34-9"). However, I want to make this variable categorical with two categories (Win and Loss) so I'm not interested in the score, and I also want to indicate "Win" and "Loss" instead of just a letter to make it easier to read. I use the grepl function which is a boolean function that checks if a string is a substring of a string value, returning True if it is or False if it isn't. Using the grepl function and ifelse statements, I mutated the variable so that if "W" is in the value, I replaced it with "Win", and if "L" is in the value, I replaced it with "Loss", thus getting rid of the scores, making the variable easier to read, and overall making it a more useful categorical variable as there are now only two levels to work with. 
+
+```{r}
+blue_devils_1415 <- blue_devils_1415 %>%
+  mutate(result = ifelse(grepl("W",result), "Win",
+                         ifelse(grepl("L",result),"Loss",
+                                "NA"
+                         )))
+```
+
+Again, I used ifelse statements and the grepl function to mutate the month variable so that instead of displaying the entire date, it only displays the month, making it a more useful categorical variable as well as it would reduce the number of levels to work with to 6.
+
+```{r}
+blue_devils_1415 <- blue_devils_1415 %>%
+  mutate(month = ifelse(grepl("Jan",month), "Jan",
+                       ifelse(grepl("Feb",month),"Feb",
+                              ifelse(grepl("Mar",month),"Mar",
+                                     ifelse(grepl("Oct",month),"Oct",
+                                            ifelse(grepl("Nov",month),"Nov",
+                                                   ifelse(grepl("Dec",month),"Dec",
+                                                          "NA")))))) )
+```
+
+To make the location variable a more useful categorical variable, I mutated it so that the value would be "home" if the original value was "Durham, N.C." and "Away" if it wasn't, reducing the number of levels to two. 
+
+```{r}
+blue_devils_1415 <- blue_devils_1415 %>%
+  mutate(location = ifelse(location == "Durham, N.C.", "Home",
+                           "Away"))
+
+blue_devils_1415
+```
+
+**Function for harvesting the data and cleaning up data:**
+
+Each function contains a parameter for the HTML link to the page and the season years, which are used to fill the season column.
+
+```{r}
+#Harvesting data
+
+seasons <- function(seasonNumbers = NULL, HTML = NULL) {
+  
+page <- read_html(HTML) 
+  
+month <- page %>%
+  html_nodes(".date_nowrap") %>%
+  html_text() %>%
+  str_trim() 
+  
+season <- rep(seasonNumbers,length(month))
+
+opponent <- page %>%
+  html_nodes(".opponent") %>%
+  html_text() %>%
+  str_trim() %>%
+  tail(-1) %>%
+  str_replace("&amp;#39;","'")
+
+location <- page %>%
+  html_nodes(".location") %>%
+  html_text() %>%
+  str_trim() %>%
+  tail(-1) %>%
+  str_replace("at ","")
+
+dukerank <- page %>%
+  html_nodes(".team-rank") %>%
+  html_text() %>%
+  str_trim() %>%
+  tail(-1)
+
+opprank <- page %>%
+  html_nodes(".opponent-rank") %>%
+  html_text() %>%
+  str_trim() %>%
+  tail(-1)
+
+result <- page %>%
+  html_nodes(".results") %>%
+  html_text() %>%
+  str_trim() %>%
+  tail(-1)
+
+blue_devils_data <- data.frame(season, month, opponent, location, result, dukerank, opprank)
+ 
+#Cleaning up the data
+
+blue_devils_data$dukerank = as.numeric(as.character(blue_devils_data$dukerank))
+blue_devils_data$opprank = as.numeric(as.character(blue_devils_data$opprank))
+
+blue_devils_data$result = as.character(blue_devils_data$result)
+
+blue_devils_data <- blue_devils_data %>%
+  mutate(result = ifelse(grepl("W",result), "Win",
+                         ifelse(grepl("L",result),"Loss",
+                                "NA"
+                         )))
+
+blue_devils_data <- blue_devils_data %>%
+  mutate(month = ifelse(grepl("Jan",month), "Jan",
+                       ifelse(grepl("Feb",month),"Feb",
+                              ifelse(grepl("Mar",month),"Mar",
+                                     ifelse(grepl("Oct",month),"Oct",
+                                            ifelse(grepl("Nov",month),"Nov",
+                                                   ifelse(grepl("Dec",month),"Dec",
+                                                          "NA")))))) )
+
+blue_devils_data <- blue_devils_data %>%
+  mutate(location = ifelse(location == "Durham, N.C.", "Home",
+                           "Away"))
+
+
+}
+```
+
+**Calling the function for each season**
+
+```{r}
+blue_devils_1314 <- seasons("13-14", "http://www.goduke.com/SportSelect.dbml?SPSID=22726&SPID=1845&DB_OEM_ID=4200&Q_SEASON=2013")
+blue_devils_1314
+
+blue_devils_1213 <- seasons("12-13", "http://www.goduke.com/SportSelect.dbml?SPSID=22726&SPID=1845&DB_OEM_ID=4200&Q_SEASON=2012")
+blue_devils_1213
+
+blue_devils_1112 <- seasons("11-12", "http://www.goduke.com/SportSelect.dbml?SPSID=22726&SPID=1845&DB_OEM_ID=4200&Q_SEASON=2011")
+blue_devils_1112
+
+blue_devils_1011 <- seasons("10-11", "http://www.goduke.com/SportSelect.dbml?SPSID=22726&SPID=1845&DB_OEM_ID=4200&Q_SEASON=2010")
+blue_devils_1011
+```
+
+**Stacking data sets together and writing it as .csv file**
+
+```{r}
+basketball <- rbind(blue_devils_1415,blue_devils_1314,blue_devils_1213,blue_devils_1112,blue_devils_1011)
+
+write.csv(basketball,file="bluedevilsbasketball.csv")
+```
+
+###Part 2: Create an interactive visualization of the data
+
+```{r}
+shinyUI(fluidPage(
+titlePanel("Categorical Analysis on Duke Basketball Data"),
+sidebarLayout(
+    sidebarPanel(
+
+      selectInput("expvar", 
+            "Explanatory Variable (Categorical):",
+            choices = c("result", "season", "result","location", "month")),
+      
+      selectInput("color", 
+                  "Responding Variable (Categorical):",
+                  choices = c("result","season", "result","location","month"))
+#       ,
+# 
+#       hr(),
+#       
+#       selectInput("numvar1",
+#                   "Explanatory Variable (Numerical):",
+#                   choices = c("dukerank","opprank")),
+#       
+#       selectInput("numvar2",
+#                   "Responding Variable (Numerical):",
+#                   choices = c("dukerank","opprank")),
+#       
+#       selectInput("color2", 
+#                   "Categorical Variable:",
+#                   choices = c("result","season", "result","location","month"))
+    
+),
+
+    mainPanel(
+
+      plotOutput('categoricalPlot')
+      
+      
+#       ,
+#       hr(),
+#       
+#       plotOutput("numericalPlot")
+    )
+)
+))
+
+output$categoricalPlot <- renderPlot({
+
+  basketball <- basketball %>%
+    filter(!is.na(input$expvar)) %>%
+    filter(!is.na(input$color))
+  
+    ggplot(data = basketball, aes_string(x = input$expvar, fill = input$color)) +
+      geom_bar() +
+      ggtitle(paste0(input$expvar," vs. ",input$color))
+    
+})
+    
+# output$numericalPlot <- renderPlot({
+# 
+#   basketball <- basketball %>%
+#     filter(!is.na(input$numvar1)) %>%
+#     filter(!is.na(input$numvar2))
+#   
+#     ggplot(data = basketball, aes_string(x = input$numvar1, y = input$numvar2, fill = input$color2)) +
+#       geom_point() +
+#       ggtitle(paste0(input$numvar1," vs. ",input$numvar2))
+# 
+# 
+#   })
+
+```
+
