@@ -99,7 +99,7 @@ Used the grepl function to clean up the result variable. The result variables co
 blue_devils_1415 <- blue_devils_1415 %>%
   mutate(result = ifelse(grepl("W",result), "Win",
                          ifelse(grepl("L",result),"Loss",
-                                "NA"
+                                NA
                          )))
 ```
 
@@ -113,7 +113,7 @@ blue_devils_1415 <- blue_devils_1415 %>%
                                      ifelse(grepl("Oct",month),"Oct",
                                             ifelse(grepl("Nov",month),"Nov",
                                                    ifelse(grepl("Dec",month),"Dec",
-                                                          "NA")))))) )
+                                                          NA)))))) )
 ```
 
 To make the location variable a more useful categorical variable, I mutated it so that the value would be "home" if the original value was "Durham, N.C." and "Away" if it wasn't, reducing the number of levels to two. 
@@ -188,7 +188,7 @@ blue_devils_data$result = as.character(blue_devils_data$result)
 blue_devils_data <- blue_devils_data %>%
   mutate(result = ifelse(grepl("W",result), "Win",
                          ifelse(grepl("L",result),"Loss",
-                                "NA"
+                                NA
                          )))
 
 blue_devils_data <- blue_devils_data %>%
@@ -198,7 +198,7 @@ blue_devils_data <- blue_devils_data %>%
                                      ifelse(grepl("Oct",month),"Oct",
                                             ifelse(grepl("Nov",month),"Nov",
                                                    ifelse(grepl("Dec",month),"Dec",
-                                                          "NA")))))) )
+                                                          NA)))))) )
 
 blue_devils_data <- blue_devils_data %>%
   mutate(location = ifelse(location == "Durham, N.C.", "Home",
@@ -234,11 +234,15 @@ write.csv(basketball,file="bluedevilsbasketball.csv")
 
 ###Part 2: Create an interactive visualization of the data
 
-My shiny app allows the user to choose an explanatory categorical variable from a drop-down menu and a responding variable (fill) from another drop-down menu. Using ggplot, the result will be a histogram with the explanatory variable graphed on the x-axis, the responding variable as the fill, and the count graphed on the y-axis. 
+My shiny app allows the user to choose variables on a drop-down menu for two plots: a categorical and numerical one. 
+
+For the categorical one, the user can choose an explanatory categorical variable from a drop-down menu and a responding categorical variable (fill) from another drop-down menu. Using ggplot, the result will be a bar plot with the explanatory variable graphed on the x-axis, the responding variable as the fill, and the count graphed on the y-axis. 
+
+For the numerical one, the user can choose an explanatory numerical variable from a drop-down menu, a responding categorical variable from another drop-down menu, and a categorical variable as the color. Using ggplot, the result will be a scatterplot with the explanatory variable graphed on the x-axis, the responding variable on the y-axis, and the dots colored by the categorical variable. 
 
 ```{r}
 shinyUI(fluidPage(
-titlePanel("Categorical Analysis on Duke Basketball Data"),
+titlePanel("Categorical and Numerical Analysis on Duke Basketball Data"),
 sidebarLayout(
     sidebarPanel(
 
@@ -249,21 +253,21 @@ sidebarLayout(
       selectInput("color", 
                   "Responding Variable (Categorical):",
                   choices = c("result","season", "result","location","month"))
-#       ,
-# 
-#       hr(),
-#       
-#       selectInput("numvar1",
-#                   "Explanatory Variable (Numerical):",
-#                   choices = c("dukerank","opprank")),
-#       
-#       selectInput("numvar2",
-#                   "Responding Variable (Numerical):",
-#                   choices = c("dukerank","opprank")),
-#       
-#       selectInput("color2", 
-#                   "Categorical Variable:",
-#                   choices = c("result","season", "result","location","month"))
+      ,
+
+      hr(),
+      
+      selectInput("numvar1",
+                  "Explanatory Variable (Numerical):",
+                  choices = c("dukerank","opprank")),
+      
+      selectInput("numvar2",
+                  "Responding Variable (Numerical):",
+                  choices = c("dukerank","opprank")),
+      
+      selectInput("color2", 
+                  "Categorical Variable:",
+                  choices = c("result","season", "result","location","month"))
     
 ),
 
@@ -272,10 +276,10 @@ sidebarLayout(
       plotOutput('categoricalPlot')
       
       
-#       ,
-#       hr(),
-#       
-#       plotOutput("numericalPlot")
+      ,
+      hr(),
+      
+      plotOutput("numericalPlot")
     )
 )
 ))
@@ -283,27 +287,27 @@ sidebarLayout(
 output$categoricalPlot <- renderPlot({
 
   basketball <- basketball %>%
-    filter(!is.na(input$expvar)) %>%
-    filter(!is.na(input$color))
+    filter_(!is.na(input$expvar)) %>%
+    filter_(!is.na(input$color))
   
-    ggplot(data = basketball, aes_string(x = input$expvar, fill = input$color)) +
-      geom_bar() +
-      ggtitle(paste0(input$expvar," vs. ",input$color))
+  ggplot(data = basketball, aes_string(x = input$expvar, fill = input$color)) +
+    geom_bar() +
+    ggtitle(paste0("Categorical Plot: ", input$expvar," vs. ",input$color))
     
 })
     
-# output$numericalPlot <- renderPlot({
-# 
-#   basketball <- basketball %>%
-#     filter(!is.na(input$numvar1)) %>%
-#     filter(!is.na(input$numvar2))
-#   
-#     ggplot(data = basketball, aes_string(x = input$numvar1, y = input$numvar2, fill = input$color2)) +
-#       geom_point() +
-#       ggtitle(paste0(input$numvar1," vs. ",input$numvar2))
-# 
-# 
-#   })
+output$numericalPlot <- renderPlot({
+
+  basketball <- basketball %>%
+    filter(!is.na(input$numvar1)) %>%
+    filter(!is.na(input$numvar2))
+  
+    ggplot(data = basketball, aes_string(x = input$numvar1, y = input$numvar2, color = input$color2)) +
+      geom_point() +
+      ggtitle(paste0("Numerical Plot: ", input$numvar1," vs. ",input$numvar2))
+
+
+  })
 
 ```
 
