@@ -234,6 +234,8 @@ write.csv(basketball,file="bluedevilsbasketball.csv")
 
 ###Part 2: Create an interactive visualization of the data
 
+My shiny app allows the user to choose an explanatory categorical variable from a drop-down menu and a responding variable (fill) from another drop-down menu. Using ggplot, the result will be a histogram with the explanatory variable graphed on the x-axis, the responding variable as the fill, and the count graphed on the y-axis. 
+
 ```{r}
 shinyUI(fluidPage(
 titlePanel("Categorical Analysis on Duke Basketball Data"),
