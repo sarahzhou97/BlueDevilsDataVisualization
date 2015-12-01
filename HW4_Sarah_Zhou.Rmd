@@ -31,6 +31,8 @@ I used str-trim to trim the unwanted characters.
 
 I also used tail(-1) to delete the first entry for some of the variables that included the header. The extra header would've made the number of rows unequal.
 
+I also used as.numeric() to store dukerank and opprank variables as numeric instead of characters.
+
 For the season column, I inserted the string "14-15" into the rep function to repeat it "length(month)" number of times so it would have the same number of rows as the rest of the variables.
 
 ```{r}
@@ -57,13 +59,15 @@ dukerank <- page %>%
   html_nodes(".team-rank") %>%
   html_text() %>%
   str_trim() %>%
-  tail(-1)
+  tail(-1) %>%
+  as.numeric()
 
 opprank <- page %>%
   html_nodes(".opponent-rank") %>%
   html_text() %>%
   str_trim() %>%
-  tail(-1)
+  tail(-1) %>%
+  as.numeric
 
 result <- page %>%
   html_nodes(".results") %>%
@@ -79,13 +83,6 @@ blue_devils_1415 <- data.frame(season, month, opponent, location, result, dukera
 ```
 
 **Cleaning up the data**
-
-Convert both dukerank and opprank variable into the character type and then to numeric type so they are numeric values
-
-```{r}
-blue_devils_1415$dukerank = as.numeric(as.character(blue_devils_1415$dukerank))
-blue_devils_1415$opprank = as.numeric(as.character(blue_devils_1415$opprank))
-```
 
 Convert the result variable to the character type so that I can alter it using a function in the stringr package
 
@@ -283,9 +280,9 @@ shinyUI(fluidPage(
 
 output$categoricalPlot <- renderPlot({
   
-  basketball <- basketball %>%
-    filter_(!is.na(input$expvar)) %>%
-    filter_(!is.na(input$color))
+basketball <- basketball %>%
+    filter_(.dots = paste0("!is.na(", input$expvar, ")")) %>%  
+    filter_(.dots = paste0("!is.na(", input$color, ")"))
   
   ggplot(data = basketball, aes_string(x = input$expvar, fill = input$color)) +
     geom_bar() +
@@ -294,10 +291,6 @@ output$categoricalPlot <- renderPlot({
 })
 
 output$numericalPlot <- renderPlot({
-  
-  basketball <- basketball %>%
-    filter(!is.na(input$numvar1)) %>%
-    filter(!is.na(input$numvar2))
   
   ggplot(data = basketball, aes_string(x = input$numvar1, y = input$numvar2, color = input$color2)) +
     geom_point() +
