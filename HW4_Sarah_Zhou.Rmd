@@ -1,5 +1,4 @@
 ---
-title: "HW4_Sarah_Zhou"
 author: "Sarah Zhou"
 month: "11/29/2015"
 output: html_document
@@ -123,7 +122,7 @@ blue_devils_1415 <- blue_devils_1415 %>%
 blue_devils_1415
 ```
 
-**Function for harvesting the data and cleaning up data:**
+**Function for harvesting the data and cleaning up data**
 
 Each function contains a parameter for the HTML link to the page and the seasonNumbers ("13-14", "12-13", etc), which is used to fill the season column.
 
